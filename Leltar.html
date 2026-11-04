@@ -4,20 +4,25 @@
 
 .actions{display:flex;gap:10px;flex-wrap:wrap}.secondary{background:#e8edf7;color:#203e72}button.secondary{background:#e8edf7;color:#203e72}.notice{border-left:4px solid #d68d17;padding:12px 16px;background:#fff5dd;line-height:1.6}.qty{max-width:110px}td a{white-space:nowrap}#file{margin:12px 0;width:100%}summary{cursor:pointer;font-weight:600}.small{font-size:14px}button:focus-visible,a:focus-visible,input:focus-visible{outline:3px solid #6e9dff;outline-offset:3px}
 </style></head><body><main>
-<header><div><span class="muted">AUTÓSBOLT · EGYSZERŰ VÁLTOZAT</span><h1>Bolti leltár</h1><p>Egy csippantás = egy darab. Azonos vonalkód, közös sor.</p></div><div class="actions"><button id="backup">Biztonsági mentés</button><button id="csv" class="secondary">Excel / CSV export</button></div></header>
+<header><div><span class="muted">AUTÓSBOLT · EGYSZERŰ VÁLTOZAT</span><h1>Bolti leltár</h1><p>Egy csippantás = egy darab. Azonos vonalkód és polchely, közös sor.</p></div><div class="actions"><button id="backup">Biztonsági mentés</button><button id="csv" class="secondary">Excel / CSV export</button></div></header>
 <p class="notice">Az adatok ebben a böngészőben maradnak. Nap végén kattints a <strong>Biztonsági mentés</strong> gombra, és őrizd meg a letöltött fájlt. Mindig ugyanazt a Leltar.html fájlt, ugyanabban a böngészőben nyisd meg. Ne használj inkognitómódot; egyszerre egy leltárablak legyen nyitva.</p>
-<section class="panel"><form id="scan"><div style="flex:1"><label for="barcode">Vonalkód beolvasása</label><input id="barcode" style="width:100%" autocomplete="off" autofocus maxlength="128" placeholder="Csippants ide — Enter nélkül is ment" required></div><button style="align-self:end">+ 1 darab</button></form>
+<section class="panel"><label for="shelf">1. Melyik polcot leltározod?</label><form id="shelfForm"><input id="shelf" list="shelves" maxlength="80" autocomplete="off" placeholder="Például A–1 vagy Olajszűrők felső polc" required style="flex:1"><datalist id="shelves"></datalist><button>Polchely használata</button></form><p>Aktív polchely: <strong id="activeShelf">Még nincs kiválasztva</strong></p><p class="muted">Először válassz polchelyet, utána csippants. Polcváltáskor itt adj meg másik helyet. Egy termék több polcon is szerepelhet, külön mennyiséggel.</p><hr style="border:0;border-top:1px solid #e5eaf1;margin:22px 0"><form id="scan"><div style="flex:1"><label for="barcode">2. Vonalkód beolvasása</label><input id="barcode" style="width:100%" autocomplete="off" autofocus maxlength="128" placeholder="Csippants ide — Enter nélkül is ment" required></div><button style="align-self:end">+ 1 darab</button></form>
 <p><label><input id="automatic" type="checkbox" checked> Automatikus mentés fél másodperccel a beolvasás után</label></p><p class="muted">Várd meg a „Mentve” visszajelzést a következő csippantás előtt. Kézi gépeléshez kapcsold ki az automatikus mentést, majd nyomj Entert vagy a + 1 darab gombot.</p><p id="status" role="status" aria-live="polite"></p></section>
 <div class="stats"><div><strong id="types">0</strong>különböző vonalkód</div><div><strong id="total">0</strong>darab összesen</div></div>
 <section class="panel"><details id="apiPanel"><summary>Automatikus terméknév — EAN Search API</summary><p>Add meg a saját API-kulcsodat. Bekapcsolás után az újonnan beolvasott, név nélküli 12 vagy 13 jegyű kódok nevét automatikusan lekérjük. A lekérések az előfizetési keretedet fogyasztják, legfeljebb másodpercenként egyszer. A már elmentett neveket nem írjuk felül.</p><label for="apiToken">API-kulcs (csak erre a megnyitásra)</label><input id="apiToken" type="password" autocomplete="off" spellcheck="false" style="width:100%" placeholder="A Premium-fiókban kapott API token"><div class="actions" style="margin-top:12px"><button id="apiEnable">Névlekérés bekapcsolása</button><button id="apiDisable" class="secondary">Kikapcsolás és kulcs törlése</button><button id="apiFill" class="secondary" disabled>Hiányzó nevek lekérése</button></div><p id="apiStatus" role="status" aria-live="polite">Kikapcsolva. A kulcsot nem tároljuk el és nem exportáljuk. A szolgáltató által visszaadott név eltérhet az Autodoc nevétől.</p><p class="muted">Internet és aktív API-keret kell. Ha a szolgáltató nem engedi a böngészős hozzáférést, a névlekérés megáll, de a darabszám mentése tovább működik. Az oldalt ne oszd meg a kulccsal együtt; újranyitáskor ismét add meg a kulcsot.</p></details></section>
-<section class="panel"><label for="search">Termékek</label><input id="search" type="search" placeholder="Keresés vonalkód vagy terméknév alapján"><div class="tablewrap"><table><thead><tr><th>Vonalkód</th><th>Terméknév</th><th>Darabszám</th><th>Módosítás</th><th>Termékkereső</th></tr></thead><tbody id="rows"></tbody></table></div><p id="empty">Még nincs beolvasott termék.</p><p class="muted">A név és a mennyiség a Mentés gombbal javítható. Az EAN Search új lapon nyílik meg, és internetet igényel; a talált nevet kézzel másold be. A leltározás internet nélkül is működik.</p></section>
-<section class="panel"><details><summary>Biztonsági mentés visszatöltése</summary><p>Válaszd ki a korábban mentett leltar-…json fájlt. Az új vonalkódok bekerülnek; a meglévők nevét és mennyiségét a fájl értékei váltják fel. A mennyiségek nem adódnak össze. A többi meglévő sor megmarad.</p><input id="file" type="file" accept=".json,application/json"><button id="restore" class="secondary">Mentés visszatöltése</button></details></section>
+<section class="panel"><label for="search">Termékek</label><input id="search" type="search" placeholder="Keresés vonalkód, terméknév vagy polchely alapján"><label for="shelfFilter">Polchely szerinti szűrés</label><select id="shelfFilter" style="font:inherit;padding:10px;margin-bottom:16px;max-width:100%"><option value="*">Minden polchely</option></select><div class="tablewrap"><table><thead><tr><th>Vonalkód</th><th>Terméknév</th><th>Polchely</th><th>Darabszám</th><th>Módosítás</th><th>Termékkereső</th></tr></thead><tbody id="rows"></tbody></table></div><p id="empty">Még nincs beolvasott termék.</p><p class="muted">A név, a polchely és a mennyiség a Mentés gombbal javítható. Az azonos termék külön polchelyei külön sorban szerepelnek; felül a teljes bolt összesítése látszik. Az EAN Search új lapon nyílik meg, és internetet igényel; a talált nevet kézzel másold be. A leltározás internet nélkül is működik.</p></section>
+<section class="panel"><details><summary>Biztonsági mentés visszatöltése</summary><p>Válaszd ki a korábban mentett leltar-…json fájlt. Az új vonalkód–polchely párok bekerülnek; az azonos vonalkódhoz és polchelyhez tartozó sorok nevét és mennyiségét a fájl értékei váltják fel. A régi mentések polchely nélkül kerülnek be. A mennyiségek nem adódnak össze. A többi meglévő sor megmarad.</p><input id="file" type="file" accept=".json,application/json"><button id="restore" class="secondary">Mentés visszatöltése</button></details></section>
 <p class="muted">A korábbi Python-változat data mappáját őrizd meg. Ez az új változat nem olvassa automatikusan annak adatbázisát.</p>
 </main><script>
 'use strict';
 const KEY='bolti-leltar-v1';
 const $=id=>document.getElementById(id);
-let items=[],scanTimer,ready=false;
+let items=[],scanTimer,ready=false,activeShelf='';
+function shelfName(value){if(typeof value!=='string'||value.length>80||/[\x00-\x1f]/.test(value))throw Error('A polchely legfeljebb 80 karakter lehet, vezérlőkarakterek nélkül.');return value.trim().replace(/\s+/g,' ');}
+function shelfId(value){return value.toLocaleLowerCase('hu');}
+function rowKey(row){return JSON.stringify([row.barcode,shelfId(row.shelf)]);}
+function chooseShelf(value){const requested=shelfName(value);if(!requested)throw Error('Add meg a polchely nevét.');activeShelf=items.find(row=>shelfId(row.shelf)===shelfId(requested))?.shelf||requested;$('shelf').value=activeShelf;$('activeShelf').textContent=activeShelf;clearTimeout(scanTimer);$('barcode').focus();message('Polchely kiválasztva: '+activeShelf+'. Kezdheted a beolvasást.');}
+$('shelfForm').onsubmit=event=>{event.preventDefault();if(activeShelf&&$('barcode').value.trim()){message('Előbb mentsd vagy töröld a beírt vonalkódot, utána válts polcot.',true);$('barcode').focus();return;}try{chooseShelf($('shelf').value);}catch(error){message(error.message,true);}};
 function message(text,error=false){$('status').textContent=text;$('status').className=error?'error':'';}
 function validate(rows){
  if(!Array.isArray(rows)||rows.length>100000)throw Error('Érvénytelen vagy túl nagy terméklista.');
@@ -25,10 +30,11 @@ function validate(rows){
  return rows.map(row=>{
   if(!row||typeof row.barcode!=='string'||!row.barcode.trim()||row.barcode.length>128||/[\x00-\x1f]/.test(row.barcode))throw Error('Érvénytelen vonalkód a mentésben.');
   const barcode=row.barcode.trim();
-  if(seen.has(barcode))throw Error('Ismétlődő vonalkód a mentésben: '+barcode);
-  seen.add(barcode);
+  const shelf=shelfName(row.shelf===undefined?'':row.shelf),key=rowKey({barcode,shelf});
+  if(seen.has(key))throw Error('Ismétlődő vonalkód és polchely a mentésben: '+barcode+' / '+shelf);
+  seen.add(key);
   if(typeof row.name!=='string'||row.name.length>300||!Number.isSafeInteger(row.quantity)||row.quantity<0||row.quantity>1000000000)throw Error('Érvénytelen név vagy mennyiség: '+barcode);
-  return {barcode,name:row.name,quantity:row.quantity};
+  return {barcode,name:row.name,shelf,quantity:row.quantity};
  });
 }
 function read(){const raw=localStorage.getItem(KEY);return raw===null?[]:validate(JSON.parse(raw));}
@@ -41,7 +47,7 @@ function stopApi(){apiGeneration++;apiToken='';apiQueue=[];apiPending.clear();ap
 function eligible(row){return !row.name.trim()&&/^\d{12,13}$/.test(row.barcode);}
 function queueName(barcode){
  if(!apiToken||apiPending.has(barcode))return;
- const row=items.find(row=>row.barcode===barcode);if(!row||!eligible(row))return;
+ const rows=items.filter(row=>row.barcode===barcode);if(!rows.some(eligible))return;
  apiPending.add(barcode);apiQueue.push(barcode);void processNames();
 }
 async function processNames(){
@@ -51,7 +57,7 @@ async function processNames(){
   try{
    const delay=Math.max(0,1100-(Date.now()-apiLastStart));if(delay)await new Promise(resolve=>setTimeout(resolve,delay));
    if(generation!==apiGeneration)continue;
-   const latest=read().find(row=>row.barcode===barcode);if(!latest||!eligible(latest))continue;
+   const latest=read().filter(row=>row.barcode===barcode);if(!latest.some(eligible))continue;
    apiMessage('Terméknév lekérése: '+barcode+'…');
    const url=new URL('https://api.ean-search.org/api');
    url.search=new URLSearchParams({op:'barcode-lookup',format:'json',language:'7',token:apiToken,[barcode.length===12?'upc':'ean']:barcode});
@@ -72,9 +78,9 @@ async function processNames(){
    }
    if(found.name.trim().length>300)throw Error('format');
    if(generation!==apiGeneration)continue;
-   const next=read(),row=next.find(row=>row.barcode===barcode);
-   if(row&&eligible(row)){row.name=found.name.trim();try{commit(next);}catch{throw Error('storage');}}
-   apiMessage('Terméknév elmentve: '+barcode+(row?' — '+row.name: ''));
+   const next=read(),rows=next.filter(row=>row.barcode===barcode&&eligible(row));
+   if(rows.length){rows.forEach(row=>row.name=found.name.trim());try{commit(next);}catch{throw Error('storage');}}
+   apiMessage('Terméknév elmentve: '+barcode+' — '+found.name.trim());
   }catch(error){
    if(generation!==apiGeneration)continue;
    stopApi();
@@ -87,27 +93,37 @@ $('apiEnable').onclick=()=>{
  stopApi();apiToken=value;$('apiFill').disabled=false;apiMessage('Bekapcsolva. A következő névtelen 12/13 jegyű kód beolvasásakor lekérjük a nevet. A kulcs még nincs élő kéréssel ellenőrizve.');$('barcode').focus();
 };
 $('apiDisable').onclick=()=>{stopApi();apiMessage('Névlekérés kikapcsolva, a kulcs törölve ebből az oldalból.');};
-$('apiFill').onclick=()=>{try{items=read();const missing=items.filter(eligible);apiMessage(missing.length+' névtelen termék vár lekérésre; minden kérés fogyaszthatja a keretet.');missing.forEach(row=>queueName(row.barcode));}catch{apiMessage('A helyi terméklistát nem sikerült olvasni.',true);}};
+$('apiFill').onclick=()=>{try{items=read();const missing=[...new Map(items.filter(eligible).map(row=>[row.barcode,row])).values()];apiMessage(missing.length+' névtelen termék vár lekérésre; minden kérés fogyaszthatja a keretet.');missing.forEach(row=>queueName(row.barcode));}catch{apiMessage('A helyi terméklistát nem sikerült olvasni.',true);}};
 function render(){
  const drafts=new Map([...$('rows').querySelectorAll('input')].filter(input=>input.value!==input.dataset.saved).map(input=>[input.getAttribute('aria-label'),input.value]));
  const active=document.activeElement,activeLabel=active?.closest('#rows')?active.getAttribute('aria-label'):null;
  const selection=activeLabel&&active.type==='text'?[active.selectionStart,active.selectionEnd]:null;
- $('types').textContent=items.length;$('total').textContent=items.reduce((sum,row)=>sum+row.quantity,0);
- $('apiFill').textContent='Hiányzó nevek lekérése ('+items.filter(eligible).length+')';
- const q=$('search').value.toLocaleLowerCase('hu');
- const visible=items.filter(row=>(row.barcode+' '+row.name).toLocaleLowerCase('hu').includes(q));
+ $('types').textContent=new Set(items.map(row=>row.barcode)).size;$('total').textContent=items.reduce((sum,row)=>sum+row.quantity,0);
+ $('apiFill').textContent='Hiányzó nevek lekérése ('+new Set(items.filter(eligible).map(row=>row.barcode)).size+')';
+ const shelves=[...new Map(items.filter(row=>row.shelf).map(row=>[shelfId(row.shelf),row.shelf])).values()].sort((a,b)=>a.localeCompare(b,'hu'));
+ $('shelves').replaceChildren(...shelves.map(shelf=>{const option=document.createElement('option');option.value=shelf;return option;}));
+ const selected=$('shelfFilter').value;$('shelfFilter').replaceChildren();
+ for(const [value,label] of [['*','Minden polchely'],['','Nincs polchely (korábbi tételek)'],...shelves.map(shelf=>['shelf:'+shelfId(shelf),shelf])]){const option=document.createElement('option');option.value=value;option.textContent=label;$('shelfFilter').append(option);}
+ $('shelfFilter').value=[...$('shelfFilter').options].some(option=>option.value===selected)?selected:'*';
+ const q=$('search').value.toLocaleLowerCase('hu'),filter=$('shelfFilter').value;
+ const visible=items.filter(row=>(row.barcode+' '+row.name+' '+row.shelf).toLocaleLowerCase('hu').includes(q)&&(filter==='*'||(filter===''&&!row.shelf)||'shelf:'+shelfId(row.shelf)===filter));
  $('rows').replaceChildren();$('empty').hidden=visible.length>0;$('empty').textContent=items.length?'Nincs találat.':'Még nincs beolvasott termék.';
  for(const row of visible){
-  const tr=document.createElement('tr');const code=document.createElement('td');code.textContent=row.barcode;tr.append(code);
-  const name=document.createElement('input');name.value=row.name;name.maxLength=300;name.setAttribute('aria-label','Terméknév: '+row.barcode);
-  const qty=document.createElement('input');qty.value=row.quantity;qty.type='number';qty.min=0;qty.max=1000000000;qty.step=1;qty.className='qty';qty.setAttribute('aria-label','Darabszám: '+row.barcode);
-  for(const input of [name,qty]){input.dataset.saved=input.value;const label=input.getAttribute('aria-label');if(drafts.has(label))input.value=drafts.get(label);}
-  for(const input of [name,qty]){const td=document.createElement('td');td.append(input);tr.append(td);}
+  const tr=document.createElement('tr');tr.dataset.barcode=row.barcode;tr.dataset.shelf=row.shelf;const suffix=row.shelf?' / '+row.shelf:'';const code=document.createElement('td');code.textContent=row.barcode;tr.append(code);
+  const name=document.createElement('input');name.value=row.name;name.maxLength=300;name.setAttribute('aria-label','Terméknév: '+row.barcode+suffix);
+  const qty=document.createElement('input');qty.value=row.quantity;qty.type='number';qty.min=0;qty.max=1000000000;qty.step=1;qty.className='qty';qty.setAttribute('aria-label','Darabszám: '+row.barcode+suffix);
+  const shelf=document.createElement('input');shelf.value=row.shelf;shelf.maxLength=80;shelf.placeholder='Nincs polchely';shelf.setAttribute('list','shelves');shelf.setAttribute('aria-label','Polchely: '+row.barcode+suffix);
+  for(const input of [name,shelf,qty]){input.dataset.saved=input.value;const label=input.getAttribute('aria-label');if(drafts.has(label))input.value=drafts.get(label);}
+  for(const input of [name,shelf,qty]){const td=document.createElement('td');td.append(input);tr.append(td);}
   const td=document.createElement('td');const save=document.createElement('button');save.textContent='Mentés';td.append(save);tr.append(td);
   save.onclick=()=>{try{
    if(qty.value===''||!qty.checkValidity())throw Error('A mennyiség nemnegatív egész szám legyen.');
-   const next=read();const index=next.findIndex(x=>x.barcode===row.barcode);if(index<0)throw Error('A termék már nem található. Frissítsd az oldalt.');
-   next[index]={barcode:row.barcode,name:name.value.trim(),quantity:Number(qty.value)};commit(next);message('Módosítás elmentve: '+row.barcode);$('barcode').focus();
+   const next=read();const index=next.findIndex(x=>rowKey(x)===rowKey(row));if(index<0)throw Error('A termék már nem található. Frissítsd az oldalt.');
+   const edited={barcode:row.barcode,name:name.value.trim(),shelf:shelfName(shelf.value),quantity:Number(qty.value)};
+   const destination=next.findIndex((x,i)=>i!==index&&rowKey(x)===rowKey(edited));
+   if(destination>=0){if(!confirm('Ezen a polcon már szerepel ez a vonalkód. A két sor mennyiségét összeadjuk ('+next[destination].quantity+' + '+edited.quantity+' db). Folytatod?'))return;edited.quantity+=next[destination].quantity;next.splice(destination,1);}
+   const source=next.findIndex(x=>rowKey(x)===rowKey(row));next[source]=edited;
+   next.filter(x=>x.barcode===row.barcode).forEach(x=>x.name=edited.name);commit(next);message('Módosítás elmentve: '+row.barcode);$('barcode').focus();
   }catch(error){message('Nem sikerült menteni: '+error.message,true);}};
   const cell=document.createElement('td');const link=document.createElement('a');link.href=eanUrl(row.barcode);link.textContent='EAN Search ↗';link.target='_blank';link.rel='noopener noreferrer';cell.append(link);tr.append(cell);$('rows').append(tr);
  }
@@ -116,10 +132,11 @@ function render(){
 function scan(){
  clearTimeout(scanTimer);if(!ready)return;
  const barcode=$('barcode').value.trim();if(!barcode)return;
+ if(!activeShelf){message('Először add meg a polchelyet, és kattints a Polchely használata gombra.',true);$('shelf').focus();return;}
  try{
-  const next=read();let row=next.find(x=>x.barcode===barcode);
-  if(row)row.quantity++;else{row={barcode,name:'',quantity:1};next.push(row);}
-  commit(next);$('barcode').value='';$('barcode').focus();message('Mentve: '+barcode+' — '+row.quantity+' db');
+  const next=read();let row=next.find(x=>x.barcode===barcode&&shelfId(x.shelf)===shelfId(activeShelf));
+  if(row)row.quantity++;else{row={barcode,name:next.find(x=>x.barcode===barcode&&x.name.trim())?.name||'',shelf:activeShelf,quantity:1};next.push(row);}
+  commit(next);$('barcode').value='';$('barcode').focus();message('Mentve: '+barcode+' — '+row.quantity+' db ezen a polcon: '+activeShelf);
   queueName(barcode);
  }catch(error){ready=false;$('barcode').disabled=true;message('A beolvasás NEM lett elmentve: '+error.message+' Készíts biztonsági mentést, majd indítsd újra az oldalt.',true);}
 }
@@ -127,22 +144,23 @@ $('scan').onsubmit=event=>{event.preventDefault();scan();};
 $('barcode').oninput=()=>{clearTimeout(scanTimer);if($('automatic').checked&&$('barcode').value.trim())scanTimer=setTimeout(scan,500);};
 $('automatic').onchange=()=>{clearTimeout(scanTimer);$('barcode').focus();};
 $('search').oninput=render;
+$('shelfFilter').onchange=render;
 function download(text,type,filename){const url=URL.createObjectURL(new Blob([text],{type}));const link=document.createElement('a');link.href=url;link.download=filename;document.body.append(link);link.click();link.remove();setTimeout(()=>URL.revokeObjectURL(url),60000);}
 function dateTag(){return new Date().toISOString().replace(/[:.]/g,'-');}
-function backup(){download(JSON.stringify({format:'bolti-leltar',version:1,exportedAt:new Date().toISOString(),products:items},null,2),'application/json','leltar-'+dateTag()+'.json');}
+function backup(){download(JSON.stringify({format:'bolti-leltar',version:2,exportedAt:new Date().toISOString(),products:items},null,2),'application/json','leltar-'+dateTag()+'.json');}
 $('backup').onclick=()=>{try{items=read();render();backup();message('Mentési fájl elkészült. Ellenőrizd a böngésző Letöltések mappáját.');}catch(error){message('Mentési hiba: '+error.message,true);}};
 $('csv').onclick=()=>{try{
  items=read();render();const cell=value=>'"'+String(value).replace(/"/g,'""')+'"';const safe=value=>/^[=+\-@\t\r]/.test(value)?"'"+value:value;
- const rows=[['Vonalkód','Terméknév','Darabszám'],...items.map(row=>[safe(row.barcode),safe(row.name),row.quantity])];
+ const rows=[['Vonalkód','Terméknév','Polchely','Darabszám'],...items.map(row=>[safe(row.barcode),safe(row.name),safe(row.shelf),row.quantity])];
  download('\ufeff'+rows.map(row=>row.map(cell).join(';')).join('\r\n'),'text/csv;charset=utf-8','leltar-'+dateTag()+'.csv');message('CSV export elkészült. Excelben a vonalkód oszlopot szövegként importáld.');
  }catch(error){message('Exportálási hiba: '+error.message,true);}};
 $('restore').onclick=async()=>{try{
  const file=$('file').files[0];if(!file)throw Error('Válaszd ki a JSON-mentést.');if(file.size>20000000)throw Error('A fájl túl nagy (legfeljebb 20 MB).');
- const parsed=JSON.parse(await file.text());if(parsed.format!=='bolti-leltar'||parsed.version!==1)throw Error('Ez nem támogatott leltármentés.');
- const incoming=validate(parsed.products);const current=read();const next=new Map(current.map(row=>[row.barcode,row]));incoming.forEach(row=>next.set(row.barcode,row));
- if(!confirm(incoming.length+' termék visszatöltése? A meglévő azonos kódok mennyiségét felülírjuk, nem összeadjuk. Folytatás előtt készíts biztonsági mentést.'))return;
+ const parsed=JSON.parse(await file.text());if(parsed.format!=='bolti-leltar'||![1,2].includes(parsed.version))throw Error('Ez nem támogatott leltármentés.');
+ const incoming=validate(parsed.products);const current=read();const next=new Map(current.map(row=>[rowKey(row),row]));incoming.forEach(row=>next.set(rowKey(row),row));
+ if(!confirm(incoming.length+' sor visszatöltése? Az azonos vonalkódú és polchelyű sorok mennyiségét felülírjuk, nem összeadjuk. Folytatás előtt készíts biztonsági mentést.'))return;
  commit([...next.values()]);message('Visszatöltve: '+incoming.length+' termék.');$('file').value='';
  }catch(error){message('Visszatöltési hiba: '+error.message,true);}};
 window.addEventListener('storage',event=>{if(event.key===KEY||event.key===null){try{items=read();render();message('A lista egy másik ablakban megváltozott. Egyszerre egy leltárablakot használj.');}catch(error){ready=false;$('barcode').disabled=true;message('Tárolási hiba: '+error.message,true);}}});
-try{items=read();const probe=KEY+'-probe';localStorage.setItem(probe,'1');localStorage.removeItem(probe);ready=true;render();message('Kezdheted a beolvasást. Az előzőleg mentett mennyiségek folytatódnak.');}catch(error){$('barcode').disabled=true;render();message('A böngésző helyi tárolója nem használható: '+error.message+' Nyisd meg a fájlt normál Chrome vagy Edge ablakban. A meglévő böngészőadatokat ne töröld.',true);}
+try{items=read();const probe=KEY+'-probe';localStorage.setItem(probe,'1');localStorage.removeItem(probe);ready=true;render();message('Először válassz polchelyet, utána kezdheted a beolvasást. A korábbi mennyiségek megmaradtak.');}catch(error){$('barcode').disabled=true;render();message('A böngésző helyi tárolója nem használható: '+error.message+' Nyisd meg a fájlt normál Chrome vagy Edge ablakban. A meglévő böngészőadatokat ne töröld.',true);}
 </script></body></html>

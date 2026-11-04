@@ -4,9 +4,23 @@
 
 1. A GitHubon kattints a **Code → Download ZIP** gombra, majd a ZIP-en jobb kattintás → **Az összes kibontása**.
 2. A kibontott mappában kattints duplán a **Leltar.html** fájlra. Chrome vagy Edge böngészőben nyisd meg. Nem kell Python, parancsablak vagy helyi webszerver.
-3. Kattints a vonalkódmezőbe és csippants. Enter nélkül is ment, ha fél másodpercig nem érkezik új karakter. A következő beolvasás előtt várd meg a „Mentve” jelzést. Enteres olvasó is működik, dupla számolás nélkül.
-4. Az azonos vonalkódok egy sorban jelennek meg, minden csippantás +1 darab. A nevet és mennyiséget a sor Mentés gombjával javíthatod. Kézi gépeléshez kapcsold ki az automatikus mentést.
+3. Először írd be vagy válaszd ki a polchelyet (például A1), majd kattints a **Polchely használata** gombra. Ezután kattints a vonalkódmezőbe és csippants. Enter nélkül is ment, ha fél másodpercig nem érkezik új karakter. A következő beolvasás előtt várd meg a „Mentve” jelzést. Enteres olvasó is működik, dupla számolás nélkül.
+4. Az azonos vonalkódok **ugyanazon a polcon** egy sorban jelennek meg, minden csippantás +1 darab. Másik polcon külön sor keletkezik. A nevet, polchelyet és mennyiséget a sor Mentés gombjával javíthatod. Kézi gépeléshez kapcsold ki az automatikus mentést.
 5. A sor végén az **EAN Search** link a vonalkóddal keres új lapon. A terméknevet kézzel is visszamásolhatod; az opcionális automatikus névlekérés beállítását alább találod.
+
+## Polchelyek és leltározás
+
+Minden megnyitáskor válassz polchelyet, utána kezdj csippantani. A program szándékosan nem választja ki automatikusan az előző helyet. Az aktív polchely neve a beolvasómező felett látható; minden további csippantás ehhez ad 1 darabot. A korábban használt, termékkel rendelkező polcok a névmezőben felajánlott listából is választhatók. Új polc nevét egyszerűen írd be. A kis- és nagybetű eltérése nem hoz létre új polcot, a szélső és ismételt szóközöket egységesítjük.
+
+Példa: ugyanabból a vonalkódból A1-en három, B2-n két csippantás két sort eredményez, 3 és 2 darabbal. A fejléc 1 különböző vonalkódot és összesen 5 darabot mutat. A polchelyszűrő a látható sorokat szűri, a felső összesítés mindig az egész bolté. Szövegesen vonalkódra, névre és polchelyre is lehet keresni.
+
+A polchely a sorban utólag javítható. Ha ugyanaz a vonalkód már szerepel a célpolcon, a program rákérdez a két sor mennyiségének összeadására. A terméknév kézi mentése az azonos vonalkód többi polchelyén is frissíti a nevet. Az API egyetlen kérésből kitölti ugyanazon vonalkód névtelen polchelyeit, a mennyiségekhez nem nyúl.
+
+**Frissítés előtt készíts JSON-biztonsági mentést.** A korábbi HTML-verzió készlete és v1-es mentése továbbra is olvasható: a régi sorok „Nincs polchely” jelöléssel maradnak meg, mennyiségük nem változik. Ezeket a sor polchelymezőjével rendeld helyhez. Egy új polcon történő csippantás újabb darabot jelent, a régi polchely nélküli készletet nem osztja szét automatikusan. A régi leltározott darabokat ne csippantsd újra pusztán a polchely megadásához, mert az növelné a készletet.
+
+Az új CSV a polchelyet is tartalmazza. A JSON-mentés formátuma v2-es: a vonalkód és polchely együtt azonosítja a sort. Visszatöltéskor csak az azonos vonalkódú **és** polchelyű sor értékei cserélődnek, a többi sor megmarad. Ugyanazon mentés ismételt visszatöltése nem duplázza a mennyiségeket. A v2-es mentéshez ezt az új programverziót használd; a régi program nem kezeli a több polchelyes adatokat.
+
+Böngészős regressziós teszt: `node tests/test_shelves.js`. Ellenőrzi a régi adatok megőrzését, a kötelező polcválasztást, az azonos kód több polcon való számolását, a szűrést, a polcok közötti áthelyezést/összevonást és a régi/új mentések visszatöltését.
 
 ## Automatikus terméknév az EAN Search API-val
 
@@ -26,7 +40,7 @@ Az automatikus mentés a böngésző helyi tárolóját használja. Mindig ugyan
 
 **Nap végén tölts le JSON-biztonsági mentést a Biztonsági mentés gombbal**, és tarts külön másolatot. A HTML-fájl önmagában nem tartalmazza a készletedet! A JSON a visszatöltéshez kell; a CSV az Excelhez. CSV-import nincs. Excelben a vonalkód oszlopot szövegként importáld, hogy a kezdő nullák megmaradjanak.
 
-A „Biztonsági mentés visszatöltése” részben a korábbi JSON-mentés kiválasztható. A visszatöltés a fájlban szereplő mennyiségeket állítja be, nem adja hozzá őket a meglévőkhöz; a többi sor megmarad. Előtte készíts mentést az aktuális állapotról. Egy böngészőablakot használj a leltározáshoz.
+A „Biztonsági mentés visszatöltése” részben a korábbi JSON-mentés kiválasztható. A visszatöltés a fájlban szereplő mennyiségeket állítja be az azonos vonalkódú és polchelyű sorokhoz, nem adja hozzá őket a meglévőkhöz; a többi sor megmarad. Előtte készíts mentést az aktuális állapotról. Egy böngészőablakot használj a leltározáshoz.
 
 A korábbi Pythonos változat `data` mappáját őrizd meg. Az új HTML-változat nem olvassa annak SQLite-adatbázisát, a korábbi adatok automatikusan nem kerülnek át. A Pythonos változat fájljait a tárolóban megtartottuk.
 
