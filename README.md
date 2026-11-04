@@ -44,7 +44,7 @@ Az automatikus mentés a böngésző helyi tárolóját használja. Mindig ugyan
 
 A „Biztonsági mentés visszatöltése” részben a korábbi JSON-mentés kiválasztható. A visszatöltés a fájlban szereplő mennyiségeket állítja be az azonos vonalkódú és polchelyű sorokhoz, nem adja hozzá őket a meglévőkhöz; a többi sor megmarad. Előtte készíts mentést az aktuális állapotról. Egy böngészőablakot használj a leltározáshoz.
 
-A korábbi Pythonos változat `data` mappáját őrizd meg. Az új HTML-változat nem olvassa annak SQLite-adatbázisát, a korábbi adatok automatikusan nem kerülnek át. A Pythonos változat fájljait a tárolóban megtartottuk.
+A korábbi Pythonos változat `data` mappáját őrizd meg. Az önálló, dupla kattintással megnyitott HTML-fájl nem fér hozzá a régi SQLite-adatbázishoz. A frissített Pythonos indító által megnyitott új felület viszont az első használatkor átveszi a régi termékeket, ha ezen a böngészőcímen még nincs elmentett modern készlet. A régi SQLite-fájlt nem módosítja. Meglévő böngészős készletet nem ír felül; a polchely nélküli régi készlet másolata az eredeti adatbázisban megmarad. Az új műveletek a böngésző helyi tárolójába kerülnek, ezért ezekhez a `data` mappa másolása helyett a felület **Biztonsági mentés** gombját használd. Az önálló `file:` és a Pythonos `http:` megnyitás külön böngészős tároló: a JSON-mentéssel vihető át közöttük a készlet.
 
 ## Fejlesztés és ellenőrzés
 
@@ -54,9 +54,19 @@ Ellenőrzött: Enter nélküli beolvasás, összevonás, Enterrel dupla számol�
 
 ---
 
-# Korábbi, Pythonos változat
+# Indítás az Inditas.bat fájllal (Python-kompatibilitás)
 
-Egygépes, magyar nyelvű alapváltozat. Minden beolvasás 1 darabbal növeli a vonalkódhoz tartozó mennyiséget. Az azonos kódok egy sorba kerülnek. A kezdő nullák megmaradnak. Terméknév és darabszám kézzel módosítható; CSV export rendelkezésre áll.
+Az `Inditas.bat` most ugyanazt a **polctérképes felületet** nyitja meg, mint a `Leltar.html`. Az elavult `static/index.html` felületet a Python-kiszolgáló már nem szolgálja ki a kezdőlapon. A régi SQLite API-t a korábbi készlet megőrzéséhez és ellenőrzéséhez megtartottuk; az új felület készlete a böngészőben tárolódik.
+
+## Frissítés a régi indítóról
+
+1. A régi felületből készíts CSV-exportot, és másold el a `data` mappát.
+2. Zárd be a régi program fekete parancsablakát és a régi böngészőlapot.
+3. A legfrissebb ZIP **összes programfájlját** másold a régi program mappájába, felülírva az `app.py`, `Leltar.html` és `Inditas.bat` fájlokat. A `data` mappát ne töröld.
+4. Az új `Inditas.bat` fájlt indítsd el. A fekete ablakban „Polcterkepes valtozat inditasa...” látható. A böngészőben nyomj Ctrl+F5-öt: felül a „Bolt polctérképe” rajznak kell megjelennie.
+5. Első használatkor az eddigi adatbázis tartalma polchely nélkül automatikusan átkerül, ha még nincs elmentett új készlet ezen a címen. Ezekhez a régi sorokhoz utólag add meg a polchelyet; ugyanazokat a darabokat ne csippantsd újra. Készíts JSON-mentést az új felületen.
+
+A Pythonos HTTP-belépési pontot is ellenőrző böngészős teszt: `node tests/test_python_launcher.js`. Ideiglenes SQLite-adatbázissal ellenőrzi a térkép megjelenését, a régi készlet egyszeri átvételét, a csippantást, a régi adatbázis sértetlenségét és a már létező böngészős készlet megőrzését.
 
 ## Windows 10
 
@@ -66,9 +76,9 @@ Letöltés GitHubról: a tároló oldalán **Code → Download ZIP**, majd a let
 2. Csomagold ki a programot egy írható mappába, például a Dokumentumok közé.
 3. Kattints duplán az `Inditas.bat` fájlra. A program megnyílik az alapértelmezett böngészőben. A parancsablakot használat közben hagyd nyitva.
 4. Kattints a vonalkód mezőbe, és olvass be. Enter nélkül is ment: a beírás végétől fél másodperc után automatikusan hozzáad 1 darabot, kiüríti a mezőt és várja a következő kódot. Várd meg a „Mentve” visszajelzést a következő csippantás előtt. Az Enter/CR lezárású olvasók is használhatók. Kézi gépeléshez kapcsold ki az „Automatikus mentés” jelölést, és Enterrel vagy a „+ 1 darab” gombbal ments.
-5. Minden fizikai darabot egyszer olvass be. Három azonos termék három csippantás után egy sorban, 3 darabbal szerepel. Téves beolvasásnál javítsd a mennyiséget, majd nyomj Mentést.
+5. A polctérképen először válassz helyet. Minden fizikai darabot egyszer olvass be. Három azonos termék három csippantás után egy sorban, 3 darabbal szerepel. Téves beolvasásnál javítsd a mennyiséget, majd nyomj Mentést.
 
-Leállítás: a parancsablakban Ctrl+C. Újraindításkor a korábbi készlet folytatódik; nem indul új leltár. Mentés helye: `data/leltar.sqlite3`. Biztonsági másolathoz állítsd le a programot, majd másold a teljes `data` mappát külön meghajtóra. A CSV export nem visszaállítható adatbázismentés. Excelben az Adatok → Szövegből/CSV importálással a vonalkód oszlopot **szövegként** töltsd be, így megmaradnak a kezdő nullák.
+Leállítás: a parancsablakban Ctrl+C. Újraindításkor a korábbi készlet folytatódik; nem indul új leltár. A régi készlet helye `data/leltar.sqlite3`; az új felületen végzett műveletek a böngészőbe kerülnek. A régi állapot megőrzéséhez a teljes `data` mappát másold, az új leltárhoz a felület **Biztonsági mentés** gombját használd. A CSV export nem visszaállítható adatbázismentés. Excelben az Adatok → Szövegből/CSV importálással a vonalkód oszlopot **szövegként** töltsd be, így megmaradnak a kezdő nullák.
 
 ## Termékkeresés az EAN Search oldalon
 

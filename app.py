@@ -26,6 +26,15 @@ def products():
         return [dict(row) for row in db.execute('SELECT * FROM products ORDER BY barcode')]
 
 
+def inventory_page():
+    """Both launch methods show the same UI; keep old SQLite stock recoverable."""
+    page = (ROOT / 'Leltar.html').read_text(encoding='utf-8')
+    # Names are user input; escape markup before embedding inert JSON in HTML.
+    seed = json.dumps(products(), ensure_ascii=True).replace('<', r'\u003c').replace('&', r'\u0026')
+    bridge = '<script id="legacyInventory" type="application/json">' + seed + '</script>'
+    return page.replace('</main><script>', '</main>' + bridge + '<script>', 1).encode('utf-8')
+
+
 def update(data, scan=False):
     barcode = data.get('barcode')
     if not isinstance(barcode, str) or not barcode.strip() or len(barcode.strip()) > 128 or any(ord(c) < 32 for c in barcode):
@@ -60,7 +69,7 @@ class Handler(BaseHTTPRequestHandler):
 
     def do_GET(self):
         if self.path == '/':
-            self.reply((ROOT / 'static' / 'index.html').read_bytes(), 'text/html; charset=utf-8')
+            self.reply(inventory_page(), 'text/html; charset=utf-8')
         elif self.path == '/api/products':
             self.reply(products())
         elif self.path == '/export.csv':

@@ -43,6 +43,17 @@ class InventoryTest(unittest.TestCase):
             app.update({'barcode': ''}, scan=True)
         self.assertEqual(app.products()[0]['quantity'], 1)
 
+    def test_python_launcher_serves_current_map_and_escapes_legacy_names(self):
+        app.update({'barcode': '001234'}, scan=True)
+        app.update({'barcode': '001234', 'name': '</script><script>unsafe()</script>', 'quantity': 3})
+        page = app.inventory_page().decode('utf-8')
+        self.assertIn('Bolt polctérképe', page)
+        self.assertIn('POLCTÉRKÉPES VÁLTOZAT', page)
+        self.assertIn('id="legacyInventory"', page)
+        self.assertNotIn('</script><script>unsafe()', page)
+        self.assertIn(r'\u003c/script>', page)
+        self.assertEqual(app.products()[0]['quantity'], 3)
+
 
 if __name__ == '__main__':
     unittest.main()
