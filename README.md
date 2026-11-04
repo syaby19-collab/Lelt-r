@@ -1,4 +1,32 @@
-# Vonalkódos bolti leltár
+# Bolti leltár — egyszerű, Python nélküli változat
+
+## Letöltés és indítás Windows 10-en
+
+1. A GitHubon kattints a **Code → Download ZIP** gombra, majd a ZIP-en jobb kattintás → **Az összes kibontása**.
+2. A kibontott mappában kattints duplán a **Leltar.html** fájlra. Chrome vagy Edge böngészőben nyisd meg. Nem kell Python, parancsablak vagy helyi webszerver.
+3. Kattints a vonalkódmezőbe és csippants. Enter nélkül is ment, ha fél másodpercig nem érkezik új karakter. A következő beolvasás előtt várd meg a „Mentve” jelzést. Enteres olvasó is működik, dupla számolás nélkül.
+4. Az azonos vonalkódok egy sorban jelennek meg, minden csippantás +1 darab. A nevet és mennyiséget a sor Mentés gombjával javíthatod. Kézi gépeléshez kapcsold ki az automatikus mentést.
+5. A sor végén az **EAN Search** link a vonalkóddal keres új lapon. A terméknevet kézzel másold vissza; automatikus adatletöltés nincs.
+
+## Adatok és biztonsági mentés
+
+Az automatikus mentés a böngésző helyi tárolóját használja. Mindig ugyanazt a fájlt, ugyanarról a helyről, ugyanabban a normál (nem inkognitó) böngészőben nyisd meg. Ne töröld a böngésző adatait. A helyi fájlok tárolási viselkedése böngészőfüggő: az adatmegőrzéshez az első próba után zárd be és nyisd újra ugyanazt a fájlt. A fájl átnevezése, áthelyezése vagy egy másik böngésző új tárolóhoz vezethet.
+
+**Nap végén tölts le JSON-biztonsági mentést a Biztonsági mentés gombbal**, és tarts külön másolatot. A HTML-fájl önmagában nem tartalmazza a készletedet! A JSON a visszatöltéshez kell; a CSV az Excelhez. CSV-import nincs. Excelben a vonalkód oszlopot szövegként importáld, hogy a kezdő nullák megmaradjanak.
+
+A „Biztonsági mentés visszatöltése” részben a korábbi JSON-mentés kiválasztható. A visszatöltés a fájlban szereplő mennyiségeket állítja be, nem adja hozzá őket a meglévőkhöz; a többi sor megmarad. Előtte készíts mentést az aktuális állapotról. Egy böngészőablakot használj a leltározáshoz.
+
+A korábbi Pythonos változat `data` mappáját őrizd meg. Az új HTML-változat nem olvassa annak SQLite-adatbázisát, a korábbi adatok automatikusan nem kerülnek át. A Pythonos változat fájljait a tárolóban megtartottuk.
+
+## Fejlesztés és ellenőrzés
+
+A `Leltar.html` önálló fájl, futtatásához nincs telepítési lépés vagy induló szolgáltatás. A meglévő checkoutot használd, külön Git worktree nem szükséges. A böngészős teszt fejlesztői környezetben Playwrightot és Chromiumot igényel: `node tests/test_standalone.js` (Chromium útvonalához `CHROMIUM_PATH` adható meg). A teszt ideiglenes böngészőprofilon fut; nem módosítja a valódi készletet.
+
+Ellenőrzött: Enter nélküli beolvasás, összevonás, Enterrel dupla számolás elkerülése, név és mennyiség javítása, újratöltés utáni adatmegőrzés, EAN-keresőlink, JSON/CSV export, JSON-visszatöltés, hibás import és sikertelen tárolás kezelése. Chromiumon, Linuxon, ideiglenes helyi tesztkiszolgálóval ellenőrizve. A felhős böngésző házirendje tiltja a file: címeket, ezért a közvetlen helyi fájlmegnyitás és a Windowsos fizikai olvasós próba még helyben szükséges.
+
+---
+
+# Korábbi, Pythonos változat
 
 Egygépes, magyar nyelvű alapváltozat. Minden beolvasás 1 darabbal növeli a vonalkódhoz tartozó mennyiséget. Az azonos kódok egy sorba kerülnek. A kezdő nullák megmaradnak. Terméknév és darabszám kézzel módosítható; CSV export rendelkezésre áll.
 

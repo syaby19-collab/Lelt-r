@@ -1,0 +1,86 @@
+<!doctype html>
+<html lang="hu"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Bolti leltár — egyszerű változat</title><style>
+*{box-sizing:border-box}body{margin:0;background:#f3f5f8;color:#15243b;font:16px system-ui,sans-serif}main{max-width:1100px;margin:40px auto;padding:0 22px}header{display:flex;align-items:center;justify-content:space-between;gap:20px}h1{margin:5px 0}p{color:#53647b}.panel{background:white;border:1px solid #dce3ed;border-radius:16px;padding:24px;margin:22px 0;box-shadow:0 5px 20px #10204006}label{display:block;font-weight:600;margin-bottom:10px}input{font:inherit;padding:12px;border:1px solid #b9c5d6;border-radius:8px;min-width:0}#barcode{flex:1;font-size:22px}form{display:flex;gap:12px}button,a.button{font:inherit;font-weight:600;background:#2158d6;color:white;border:0;border-radius:8px;padding:12px 18px;cursor:pointer;text-decoration:none}button:disabled{opacity:.5}#status{min-height:28px;margin:15px 0 0;color:#225d37}#status.error{color:#b21e32}.stats{display:flex;gap:35px;margin:20px 0}.stats strong{font-size:28px;display:block}#search{width:100%;margin-bottom:16px}table{width:100%;border-collapse:collapse;text-align:left}td,th{padding:12px 8px;border-bottom:1px solid #e5eaf1}th{color:#53647b;font-size:14px}td:first-child{font-family:monospace;font-size:16px}td input{width:100%}.qty{width:100px}td button{padding:10px}.tablewrap{overflow:auto}#empty{text-align:center;padding:28px}.muted{font-size:14px;color:#53647b} @media(max-width:650px){header{align-items:start;flex-direction:column}form{flex-wrap:wrap}main{margin:20px auto}.panel{padding:16px}table{min-width:620px}}
+
+.actions{display:flex;gap:10px;flex-wrap:wrap}.secondary{background:#e8edf7;color:#203e72}button.secondary{background:#e8edf7;color:#203e72}.notice{border-left:4px solid #d68d17;padding:12px 16px;background:#fff5dd;line-height:1.6}.qty{max-width:110px}td a{white-space:nowrap}#file{margin:12px 0;width:100%}summary{cursor:pointer;font-weight:600}.small{font-size:14px}button:focus-visible,a:focus-visible,input:focus-visible{outline:3px solid #6e9dff;outline-offset:3px}
+</style></head><body><main>
+<header><div><span class="muted">AUTÓSBOLT · EGYSZERŰ VÁLTOZAT</span><h1>Bolti leltár</h1><p>Egy csippantás = egy darab. Azonos vonalkód, közös sor.</p></div><div class="actions"><button id="backup">Biztonsági mentés</button><button id="csv" class="secondary">Excel / CSV export</button></div></header>
+<p class="notice">Az adatok ebben a böngészőben maradnak. Nap végén kattints a <strong>Biztonsági mentés</strong> gombra, és őrizd meg a letöltött fájlt. Mindig ugyanazt a Leltar.html fájlt, ugyanabban a böngészőben nyisd meg. Ne használj inkognitómódot; egyszerre egy leltárablak legyen nyitva.</p>
+<section class="panel"><form id="scan"><div style="flex:1"><label for="barcode">Vonalkód beolvasása</label><input id="barcode" style="width:100%" autocomplete="off" autofocus maxlength="128" placeholder="Csippants ide — Enter nélkül is ment" required></div><button style="align-self:end">+ 1 darab</button></form>
+<p><label><input id="automatic" type="checkbox" checked> Automatikus mentés fél másodperccel a beolvasás után</label></p><p class="muted">Várd meg a „Mentve” visszajelzést a következő csippantás előtt. Kézi gépeléshez kapcsold ki az automatikus mentést, majd nyomj Entert vagy a + 1 darab gombot.</p><p id="status" role="status" aria-live="polite"></p></section>
+<div class="stats"><div><strong id="types">0</strong>különböző vonalkód</div><div><strong id="total">0</strong>darab összesen</div></div>
+<section class="panel"><label for="search">Termékek</label><input id="search" type="search" placeholder="Keresés vonalkód vagy terméknév alapján"><div class="tablewrap"><table><thead><tr><th>Vonalkód</th><th>Terméknév</th><th>Darabszám</th><th>Módosítás</th><th>Termékkereső</th></tr></thead><tbody id="rows"></tbody></table></div><p id="empty">Még nincs beolvasott termék.</p><p class="muted">A név és a mennyiség a Mentés gombbal javítható. Az EAN Search új lapon nyílik meg, és internetet igényel; a talált nevet kézzel másold be. A leltározás internet nélkül is működik.</p></section>
+<section class="panel"><details><summary>Biztonsági mentés visszatöltése</summary><p>Válaszd ki a korábban mentett leltar-…json fájlt. Az új vonalkódok bekerülnek; a meglévők nevét és mennyiségét a fájl értékei váltják fel. A mennyiségek nem adódnak össze. A többi meglévő sor megmarad.</p><input id="file" type="file" accept=".json,application/json"><button id="restore" class="secondary">Mentés visszatöltése</button></details></section>
+<p class="muted">A korábbi Python-változat data mappáját őrizd meg. Ez az új változat nem olvassa automatikusan annak adatbázisát.</p>
+</main><script>
+'use strict';
+const KEY='bolti-leltar-v1';
+const $=id=>document.getElementById(id);
+let items=[],scanTimer,ready=false;
+function message(text,error=false){$('status').textContent=text;$('status').className=error?'error':'';}
+function validate(rows){
+ if(!Array.isArray(rows)||rows.length>100000)throw Error('Érvénytelen vagy túl nagy terméklista.');
+ const seen=new Set();
+ return rows.map(row=>{
+  if(!row||typeof row.barcode!=='string'||!row.barcode.trim()||row.barcode.length>128||/[\x00-\x1f]/.test(row.barcode))throw Error('Érvénytelen vonalkód a mentésben.');
+  const barcode=row.barcode.trim();
+  if(seen.has(barcode))throw Error('Ismétlődő vonalkód a mentésben: '+barcode);
+  seen.add(barcode);
+  if(typeof row.name!=='string'||row.name.length>300||!Number.isSafeInteger(row.quantity)||row.quantity<0||row.quantity>1000000000)throw Error('Érvénytelen név vagy mennyiség: '+barcode);
+  return {barcode,name:row.name,quantity:row.quantity};
+ });
+}
+function read(){const raw=localStorage.getItem(KEY);return raw===null?[]:validate(JSON.parse(raw));}
+function commit(next){const clean=validate(next);localStorage.setItem(KEY,JSON.stringify(clean));items=clean;render();}
+function eanUrl(barcode){return 'https://www.ean-search.org/?q='+encodeURIComponent(barcode);}
+function render(){
+ $('types').textContent=items.length;$('total').textContent=items.reduce((sum,row)=>sum+row.quantity,0);
+ const q=$('search').value.toLocaleLowerCase('hu');
+ const visible=items.filter(row=>(row.barcode+' '+row.name).toLocaleLowerCase('hu').includes(q));
+ $('rows').replaceChildren();$('empty').hidden=visible.length>0;$('empty').textContent=items.length?'Nincs találat.':'Még nincs beolvasott termék.';
+ for(const row of visible){
+  const tr=document.createElement('tr');const code=document.createElement('td');code.textContent=row.barcode;tr.append(code);
+  const name=document.createElement('input');name.value=row.name;name.maxLength=300;name.setAttribute('aria-label','Terméknév: '+row.barcode);
+  const qty=document.createElement('input');qty.value=row.quantity;qty.type='number';qty.min=0;qty.max=1000000000;qty.step=1;qty.className='qty';qty.setAttribute('aria-label','Darabszám: '+row.barcode);
+  for(const input of [name,qty]){const td=document.createElement('td');td.append(input);tr.append(td);}
+  const td=document.createElement('td');const save=document.createElement('button');save.textContent='Mentés';td.append(save);tr.append(td);
+  save.onclick=()=>{try{
+   if(qty.value===''||!qty.checkValidity())throw Error('A mennyiség nemnegatív egész szám legyen.');
+   const next=read();const index=next.findIndex(x=>x.barcode===row.barcode);if(index<0)throw Error('A termék már nem található. Frissítsd az oldalt.');
+   next[index]={barcode:row.barcode,name:name.value.trim(),quantity:Number(qty.value)};commit(next);message('Módosítás elmentve: '+row.barcode);$('barcode').focus();
+  }catch(error){message('Nem sikerült menteni: '+error.message,true);}};
+  const cell=document.createElement('td');const link=document.createElement('a');link.href=eanUrl(row.barcode);link.textContent='EAN Search ↗';link.target='_blank';link.rel='noopener noreferrer';cell.append(link);tr.append(cell);$('rows').append(tr);
+ }
+}
+function scan(){
+ clearTimeout(scanTimer);if(!ready)return;
+ const barcode=$('barcode').value.trim();if(!barcode)return;
+ try{
+  const next=read();let row=next.find(x=>x.barcode===barcode);
+  if(row)row.quantity++;else{row={barcode,name:'',quantity:1};next.push(row);}
+  commit(next);$('barcode').value='';$('barcode').focus();message('Mentve: '+barcode+' — '+row.quantity+' db');
+ }catch(error){ready=false;$('barcode').disabled=true;message('A beolvasás NEM lett elmentve: '+error.message+' Készíts biztonsági mentést, majd indítsd újra az oldalt.',true);}
+}
+$('scan').onsubmit=event=>{event.preventDefault();scan();};
+$('barcode').oninput=()=>{clearTimeout(scanTimer);if($('automatic').checked&&$('barcode').value.trim())scanTimer=setTimeout(scan,500);};
+$('automatic').onchange=()=>{clearTimeout(scanTimer);$('barcode').focus();};
+$('search').oninput=render;
+function download(text,type,filename){const url=URL.createObjectURL(new Blob([text],{type}));const link=document.createElement('a');link.href=url;link.download=filename;document.body.append(link);link.click();link.remove();setTimeout(()=>URL.revokeObjectURL(url),60000);}
+function dateTag(){return new Date().toISOString().replace(/[:.]/g,'-');}
+function backup(){download(JSON.stringify({format:'bolti-leltar',version:1,exportedAt:new Date().toISOString(),products:items},null,2),'application/json','leltar-'+dateTag()+'.json');}
+$('backup').onclick=()=>{try{items=read();render();backup();message('Mentési fájl elkészült. Ellenőrizd a böngésző Letöltések mappáját.');}catch(error){message('Mentési hiba: '+error.message,true);}};
+$('csv').onclick=()=>{try{
+ items=read();render();const cell=value=>'"'+String(value).replace(/"/g,'""')+'"';const safe=value=>/^[=+\-@\t\r]/.test(value)?"'"+value:value;
+ const rows=[['Vonalkód','Terméknév','Darabszám'],...items.map(row=>[safe(row.barcode),safe(row.name),row.quantity])];
+ download('\ufeff'+rows.map(row=>row.map(cell).join(';')).join('\r\n'),'text/csv;charset=utf-8','leltar-'+dateTag()+'.csv');message('CSV export elkészült. Excelben a vonalkód oszlopot szövegként importáld.');
+ }catch(error){message('Exportálási hiba: '+error.message,true);}};
+$('restore').onclick=async()=>{try{
+ const file=$('file').files[0];if(!file)throw Error('Válaszd ki a JSON-mentést.');if(file.size>20000000)throw Error('A fájl túl nagy (legfeljebb 20 MB).');
+ const parsed=JSON.parse(await file.text());if(parsed.format!=='bolti-leltar'||parsed.version!==1)throw Error('Ez nem támogatott leltármentés.');
+ const incoming=validate(parsed.products);const current=read();const next=new Map(current.map(row=>[row.barcode,row]));incoming.forEach(row=>next.set(row.barcode,row));
+ if(!confirm(incoming.length+' termék visszatöltése? A meglévő azonos kódok mennyiségét felülírjuk, nem összeadjuk. Folytatás előtt készíts biztonsági mentést.'))return;
+ commit([...next.values()]);message('Visszatöltve: '+incoming.length+' termék.');$('file').value='';
+ }catch(error){message('Visszatöltési hiba: '+error.message,true);}};
+window.addEventListener('storage',event=>{if(event.key===KEY||event.key===null){try{items=read();render();message('A lista egy másik ablakban megváltozott. Egyszerre egy leltárablakot használj.');}catch(error){ready=false;$('barcode').disabled=true;message('Tárolási hiba: '+error.message,true);}}});
+try{items=read();const probe=KEY+'-probe';localStorage.setItem(probe,'1');localStorage.removeItem(probe);ready=true;render();message('Kezdheted a beolvasást. Az előzőleg mentett mennyiségek folytatódnak.');}catch(error){$('barcode').disabled=true;render();message('A böngésző helyi tárolója nem használható: '+error.message+' Nyisd meg a fájlt normál Chrome vagy Edge ablakban. A meglévő böngészőadatokat ne töröld.',true);}
+</script></body></html>
