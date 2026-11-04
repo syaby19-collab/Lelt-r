@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="hu">
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Bolti leltár</title>
+<style>
+*{box-sizing:border-box}body{margin:0;background:#f3f5f8;color:#15243b;font:16px system-ui,sans-serif}main{max-width:1100px;margin:40px auto;padding:0 22px}header{display:flex;align-items:center;justify-content:space-between;gap:20px}h1{margin:5px 0}p{color:#53647b}.panel{background:white;border:1px solid #dce3ed;border-radius:16px;padding:24px;margin:22px 0;box-shadow:0 5px 20px #10204006}label{display:block;font-weight:600;margin-bottom:10px}input{font:inherit;padding:12px;border:1px solid #b9c5d6;border-radius:8px;min-width:0}#barcode{flex:1;font-size:22px}form{display:flex;gap:12px}button,a.button{font:inherit;font-weight:600;background:#2158d6;color:white;border:0;border-radius:8px;padding:12px 18px;cursor:pointer;text-decoration:none}button:disabled{opacity:.5}#status{min-height:28px;margin:15px 0 0;color:#225d37}#status.error{color:#b21e32}.stats{display:flex;gap:35px;margin:20px 0}.stats strong{font-size:28px;display:block}#search{width:100%;margin-bottom:16px}table{width:100%;border-collapse:collapse;text-align:left}td,th{padding:12px 8px;border-bottom:1px solid #e5eaf1}th{color:#53647b;font-size:14px}td:first-child{font-family:monospace;font-size:16px}td input{width:100%}.qty{width:100px}td button{padding:10px}.tablewrap{overflow:auto}#empty{text-align:center;padding:28px}.muted{font-size:14px;color:#53647b} @media(max-width:650px){header{align-items:start;flex-direction:column}form{flex-wrap:wrap}main{margin:20px auto}.panel{padding:16px}table{min-width:620px}}
+</style>
+<main>
+<header><div><span class="muted">AUTÓSBOLT · KÉSZLETFELMÉRÉS</span><h1>Bolti leltár</h1><p>Egy csippantás = egy darab. Azonos vonalkód, közös sor.</p></div><a class="button" href="/export.csv" download="leltar.csv">CSV export</a></header>
+<section class="panel"><label for="barcode">Vonalkód beolvasása</label><form id="scan"><input id="barcode" autocomplete="off" autofocus placeholder="Csippants ide — automatikusan mentjük" maxlength="128" required><button>+ 1 darab</button></form><p><label><input id="automatic" type="checkbox" checked> Automatikus mentés beolvasás után</label></p><p class="muted">Enter nélkül is működik: a beírás végétől fél másodperc múlva mentünk. Kézi gépeléshez kapcsold ki az automatikus mentést, majd nyomj Entert vagy a + 1 darab gombot.</p><p id="status" role="status" aria-live="polite"></p></section>
+<div class="stats"><div><strong id="types">0</strong>különböző vonalkód</div><div><strong id="total">0</strong>darab összesen</div></div>
+<section class="panel"><label for="search">Termékek</label><input id="search" type="search" placeholder="Keresés vonalkód vagy név alapján"><div class="tablewrap"><table><thead><tr><th>Vonalkód</th><th>Terméknév (opcionális)</th><th>Darabszám</th><th>Módosítás</th><th>Termékkereső</th></tr></thead><tbody id="rows"></tbody></table></div><p id="empty">Még nincs beolvasott termék. Kezdd az első vonalkóddal!</p><p class="muted">Alapértelmezett külső kereső: EAN Search. A sor végén lévő „EAN Search” link a vonalkódot új lapon keresi meg; internetkapcsolat szükséges. A találatból a terméknevet kézzel másolhatod be, majd nyomj Mentést.</p><p class="muted">A mennyiség kézzel javítható, majd a Mentés gombbal rögzíthető. Az adatok automatikusan megmaradnak a gépen.</p></section>
+</main>
+<script>
+let items=[];
+const $=id=>document.getElementById(id);
+function status(text,error=false){$('status').textContent=text;$('status').className=error?'error':'';}
+function eanSearchUrl(barcode){return 'https://www.ean-search.org/?q='+encodeURIComponent(barcode);}
+async function request(path,data){const response=await fetch(path,data?{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(data)}:{});const result=await response.json();if(!response.ok)throw Error(result.error||'A művelet nem sikerült.');return result;}
+function render(){
+ $('types').textContent=items.length;$('total').textContent=items.reduce((n,x)=>n+x.quantity,0);
+ const query=$('search').value.toLocaleLowerCase('hu');const visible=items.filter(x=>(x.barcode+' '+x.name).toLocaleLowerCase('hu').includes(query));
+ $('rows').replaceChildren();$('empty').hidden=visible.length>0;$('empty').textContent=items.length?'Nincs találat.':'Még nincs beolvasott termék. Kezdd az első vonalkóddal!';
+ for(const item of visible){const tr=document.createElement('tr');const code=document.createElement('td');code.textContent=item.barcode;tr.append(code);
+ const name=document.createElement('input');name.value=item.name;name.maxLength=300;name.setAttribute('aria-label','Terméknév: '+item.barcode);
+ const qty=document.createElement('input');qty.type='number';qty.min=0;qty.max=1000000000;qty.step=1;qty.value=item.quantity;qty.className='qty';qty.setAttribute('aria-label','Darabszám: '+item.barcode);
+ for(const input of [name,qty]){const td=document.createElement('td');td.append(input);tr.append(td);}
+ const td=document.createElement('td');const save=document.createElement('button');save.textContent='Mentés';td.append(save);tr.append(td);
+ save.onclick=async()=>{if(!qty.checkValidity()||qty.value===''){status('Adj meg nemnegatív egész mennyiséget.',true);return;}save.disabled=true;try{const updated=await request('/api/update',{barcode:item.barcode,name:name.value,quantity:Number(qty.value)});items=items.map(x=>x.barcode===updated.barcode?updated:x);render();status('Módosítás elmentve.');$('barcode').focus();}catch(e){status(e.message,true);save.disabled=false;}};
+ const lookupCell=document.createElement('td');const lookup=document.createElement('a');lookup.textContent='EAN Search ↗';lookup.href=eanSearchUrl(item.barcode);lookup.target='_blank';lookup.rel='noopener noreferrer';lookup.setAttribute('aria-label','Keresés az EAN Search oldalon: '+item.barcode);lookupCell.append(lookup);tr.append(lookupCell);
+ $('rows').append(tr);}
+}
+// Soros mentés: a gyors egymás utáni beolvasások is külön növelik a készletet.
+let queue=Promise.resolve();
+let scanTimer;
+function submitBarcode(){clearTimeout(scanTimer);const barcode=$('barcode').value.trim();if(!barcode)return;$('barcode').value='';$('barcode').focus();queue=queue.then(async()=>{try{const updated=await request('/api/scan',{barcode});const index=items.findIndex(x=>x.barcode===updated.barcode);if(index<0)items.push(updated);else items[index]=updated;render();status('Mentve: '+updated.barcode+' — '+updated.quantity+' db');}catch(e){status('Nem mentett beolvasás: '+barcode+'. '+e.message+' Olvasd be újra.',true);alert('Nem sikerült menteni: '+barcode+'\n'+e.message+'\nOlvasd be újra ezt a terméket.');}});}
+$('scan').onsubmit=e=>{e.preventDefault();submitBarcode();};
+$('barcode').oninput=()=>{clearTimeout(scanTimer);if($('automatic').checked&&$('barcode').value.trim())scanTimer=setTimeout(submitBarcode,500);};
+$('automatic').onchange=()=>{clearTimeout(scanTimer);$('barcode').placeholder=$('automatic').checked?'Csippants ide — automatikusan mentjük':'Írd be a kódot, majd Enter';$('barcode').focus();};
+$('search').oninput=render;
+request('/api/products').then(data=>{items=data;render();}).catch(e=>status('Az adatok betöltése nem sikerült: '+e.message,true));
+</script>
+</html>
