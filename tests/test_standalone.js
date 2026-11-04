@@ -43,7 +43,7 @@ const http = require('node:http');
     await page.locator('#csv').click();
     const csv = await fs.readFile(await (await csvEvent).path(), 'utf8');
     assert(csv.includes('"001234";"Olajszűrő";"8"'));
-    await page.locator('summary').click();
+    await page.getByText('Biztonsági mentés visszatöltése', {exact: true}).click();
     async function importRows(products) {
       await page.locator('#file').setInputFiles({name: 'backup.json', mimeType: 'application/json', buffer: Buffer.from(JSON.stringify({format:'bolti-leltar',version:1,products}))});
       await page.locator('#restore').click();

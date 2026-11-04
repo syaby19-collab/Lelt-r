@@ -6,7 +6,19 @@
 2. A kibontott mappában kattints duplán a **Leltar.html** fájlra. Chrome vagy Edge böngészőben nyisd meg. Nem kell Python, parancsablak vagy helyi webszerver.
 3. Kattints a vonalkódmezőbe és csippants. Enter nélkül is ment, ha fél másodpercig nem érkezik új karakter. A következő beolvasás előtt várd meg a „Mentve” jelzést. Enteres olvasó is működik, dupla számolás nélkül.
 4. Az azonos vonalkódok egy sorban jelennek meg, minden csippantás +1 darab. A nevet és mennyiséget a sor Mentés gombjával javíthatod. Kézi gépeléshez kapcsold ki az automatikus mentést.
-5. A sor végén az **EAN Search** link a vonalkóddal keres új lapon. A terméknevet kézzel másold vissza; automatikus adatletöltés nincs.
+5. A sor végén az **EAN Search** link a vonalkóddal keres új lapon. A terméknevet kézzel is visszamásolhatod; az opcionális automatikus névlekérés beállítását alább találod.
+
+## Automatikus terméknév az EAN Search API-val
+
+A `Leltar.html` **Automatikus terméknév — EAN Search API** részét nyisd le. Írd be a saját Premium-fiókod API-kulcsát, majd kattints a **Névlekérés bekapcsolása** gombra. A kulcsmező ezután kiürül; a kulcs csak a lap memóriájában marad. Újratöltés vagy bezárás után ismét meg kell adni. Ne küldj kulcsot chatben vagy képernyőképen, és ne írd a forráskódba. A korábban megosztott kulcsot a szolgáltatónál cseréld le.
+
+Bekapcsolva a program az újonnan beolvasott, név nélküli 12/13 jegyű kódokat sorban lekérdezi. A korábban felvitt névtelen termékekhez használd a **Hiányzó nevek lekérése** gombot. Minden ilyen kérés fogyaszthatja az előfizetési keretet. A már tárolt neveket nem írjuk felül, ugyanarra a folyamatban lévő kódra nem indítunk több kérést, és másodpercenként legfeljebb egy kérést küldünk. A sikertelen vagy nem található termék kézzel elnevezhető; egy új beolvasás vagy a hiányzó nevek gomb újra megpróbálhatja a keresést. Az API-hívások nem módosítják a darabszámot. Kézzel már elmentett név elsőbbséget élvez a később érkező válasszal szemben.
+
+A név az **EAN Search adatbázisából** származik, nem az Autodoc oldaláról. Magyar nevet kérünk (`language=7`), de a szolgáltató más nyelvet is visszaadhat; találat nem garantált. Csak HTTPS-en, közvetlenül az `api.ean-search.org` szolgáltatónak küldünk kulcsot, a dokumentáció szerinti `barcode-lookup` hívással. A kulcs nem kerül a böngészős készletmentésbe, a JSON-ba vagy a CSV-be. A „Kikapcsolás és kulcs törlése” gomb törli a lapban tartott példányt és leállítja a várakozó kéréseket. A már elküldött kérés a szolgáltatónál ettől még beleszámíthat a keretbe.
+
+Internet, aktív előfizetési keret és a szolgáltató által engedélyezett böngészős hozzáférés szükséges. A helyi HTML-fájl eredete `null`; ha a szolgáltató ezt nem engedi CORS-szal, a böngésző nem tudja átvenni a választ. Nem használunk nyilvános proxyt, és nem kapcsoljuk ki a böngésző védelmét. Hálózati, formátum-, jogosultsági vagy kerethibánál az automatikus névlekérés megáll, de a leltározás működik tovább. A felület a hibát külön jelzi. A bekapcsolás önmagában nem igazolja a kulcs érvényességét, az első tényleges válasz ad visszajelzést.
+
+**Ellenőrzés:** `node tests/test_ean_api.js` Playwright és Chromium mellett. A teszt csak mesterséges API-válaszokat és tesztkulcsot használ; nem fogyaszt előfizetési keretet. Ellenőrzött a névkitöltés, összevont beolvasás, másodpercenkénti korlát, titok kizárása a tárolóból/exportból, kézi névvel ütköző késői válasz, keret/jogosultság/hálózati hiba és utólagos kitöltés. **Élő API-kapcsolatot és a helyi Windows-fájlból engedélyezett CORS-hozzáférést itt nem tudtunk igazolni.** Ha a lekérés nálad hibát ír, a hiba szövegét küldd el, a kulcsot takard ki.
 
 ## Adatok és biztonsági mentés
 
