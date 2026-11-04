@@ -11,6 +11,27 @@ const http=require('node:http');
  try{
   const context=await browser.newContext({acceptDownloads:true});const page=await context.newPage();const errors=[];page.on('pageerror',e=>errors.push(e.message));
   await page.goto('http://127.0.0.1:'+server.address().port);
+  assert(await page.getByRole('heading',{name:'Bolt polctérképe',exact:true}).isVisible());
+  const map=page.locator('#floorPanel');
+  const mapShelves=await map.locator('.shelf-button').evaluateAll(buttons=>buttons.map(button=>button.dataset.shelf));
+  assert.equal(new Set(mapShelves).size,mapShelves.length,'Map shelf buttons must be unique');
+  assert(await page.evaluate(()=>knownShelves().every(name=>[...document.querySelectorAll('#floorPanel .shelf-button')].some(button=>button.dataset.shelf===name))),'Every preset is clickable');
+  const boxes=await page.evaluate(()=>FLOOR_PLACES);
+  const occupied=new Set();for(const [name,col,row,width,height] of boxes){assert(col>0&&row>0&&col+width<=12&&row+height<=25);for(let x=col;x<col+width;x++)for(let y=row;y<row+height;y++){const key=x+','+y;assert(!occupied.has(key),'Overlapping shelves: '+name);occupied.add(key);}}
+  const leftShelf=map.getByRole('button',{name:'Polc kiválasztása: bf polc 01',exact:true});
+  await leftShelf.click();assert.equal(await leftShelf.getAttribute('aria-pressed'),'true');
+  assert.equal(await page.locator('#barcode').evaluate(input=>document.activeElement===input),true,'Map click focuses scanner');
+  await page.locator('#barcode').fill('000123');await page.locator('#barcode').press('Enter');
+  assert.equal(await leftShelf.getAttribute('data-count'),'1');
+  await page.locator('#automatic').uncheck();await page.locator('#barcode').fill('pending');
+  await map.getByRole('button',{name:'Polc kiválasztása: 01',exact:true}).click();
+  assert.equal(await page.locator('#activeShelf').textContent(),'bf polc 01','Map does not reassign a pending scan');
+  await page.locator('#barcode').fill('');
+  const numberedShelf=map.getByRole('button',{name:'Polc kiválasztása: 01',exact:true});await numberedShelf.focus();await numberedShelf.press('Space');
+  await page.locator('#barcode').fill('000123');await page.locator('#barcode').press('Enter');
+  assert.equal(await numberedShelf.getAttribute('data-count'),'1');assert.equal(await leftShelf.getAttribute('aria-pressed'),'false');
+  assert.equal(await page.locator('#total').textContent(),'2');
+  await page.evaluate(()=>localStorage.removeItem('bolti-leltar-v1'));await page.reload();
   assert.equal(await page.locator('#total').textContent(),'0','Preset shelves do not seed inventory');
   const presetOptions=await page.locator('#knownShelf option').allTextContents();
   for(const name of ['01','16','bf polc 01','jf polc 02','h rakt 01','motul','visszáru'])assert(presetOptions.includes(name),'Layout shelf missing: '+name);
@@ -80,6 +101,7 @@ const http=require('node:http');
   assert.equal(await page.locator('#total').textContent(),'18','Invalid imports must be atomic');
   assert.deepEqual(errors,[]);
   await page.screenshot({path:'/tmp/leltar-shelves.png',fullPage:true});
+  await map.screenshot({path:'/tmp/leltar-floor-map.png'});
   await context.close();
   console.log('Shelf browser checks passed: legacy migration, required shelf, per-shelf counts, canonical names, global totals, filtering, edit/move/merge, shared product name, CSV, v1/v2 backups and duplicate rejection.');
  }finally{await browser.close();await new Promise(resolve=>server.close(resolve));}

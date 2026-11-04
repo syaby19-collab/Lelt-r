@@ -4,11 +4,13 @@
 
 1. A GitHubon kattints a **Code → Download ZIP** gombra, majd a ZIP-en jobb kattintás → **Az összes kibontása**.
 2. A kibontott mappában kattints duplán a **Leltar.html** fájlra. Chrome vagy Edge böngészőben nyisd meg. Nem kell Python, parancsablak vagy helyi webszerver.
-3. A **Válassz helyet a bolt polclistájából** mezőben válassz polcot: ez azonnal aktiválja a helyet és a vonalkódmezőbe lép. Egyéni névhez töltsd ki az alatta lévő mezőt, majd kattints a **Polchely használata** gombra. Ezután kattints a vonalkódmezőbe és csippants. Enter nélkül is ment, ha fél másodpercig nem érkezik új karakter. A következő beolvasás előtt várd meg a „Mentve” jelzést. Enteres olvasó is működik, dupla számolás nélkül.
+3. A **Bolt polctérképe** rajzon kattints a kívánt polcra, vagy a **Válassz helyet a bolt polclistájából** mezőben válassz helyet: ez azonnal aktiválja a helyet és a vonalkódmezőbe lép. Egyéni névhez töltsd ki az alatta lévő mezőt, majd kattints a **Polchely használata** gombra. Ezután kattints a vonalkódmezőbe és csippants. Enter nélkül is ment, ha fél másodpercig nem érkezik új karakter. A következő beolvasás előtt várd meg a „Mentve” jelzést. Enteres olvasó is működik, dupla számolás nélkül.
 4. Az azonos vonalkódok **ugyanazon a polcon** egy sorban jelennek meg, minden csippantás +1 darab. Másik polcon külön sor keletkezik. A nevet, polchelyet és mennyiséget a sor Mentés gombjával javíthatod. Kézi gépeléshez kapcsold ki az automatikus mentést.
 5. A sor végén az **EAN Search** link a vonalkóddal keres új lapon. A terméknevet kézzel is visszamásolhatod; az opcionális automatikus névlekérés beállítását alább találod.
 
 ## Polchelyek és leltározás
+
+A frissített változat tetején **AUTÓSBOLT · POLCTÉRKÉPES VÁLTOZAT** felirat és a **Bolt polctérképe** rajz látható. A rajz a feltöltött bolti elrendezést követő vázlat, nem méretarányos építészeti terv. A bal/jobb oldali polcok, pultok, a 01–16 középső állványok és a hátsó raktárrész a rajzon kattinthatók; a további helyek jobb oldali gombokként jelennek meg. Kattintáskor a polc zöldre vált, a beolvasómező fókuszt kap. A térkép kis számai az adott helyen rögzített összes darabot mutatják. Billentyűzettel Tab és Enter/Space is használható. Ha már van beírt, még nem mentett vonalkód, a helyváltás nem történik meg: előbb mentsd vagy töröld a kódot. Keskeny kijelzőn a rajz oldalra görgethető.
 
 Minden megnyitáskor válassz polchelyet, utána kezdj csippantani. A bolt feltöltött elrendezéséből előre bekerültek a polcnevek a csoportos választóba: bal oldali polcok, pultok, jobb oldali polcok, középső számozott állványok, hátsó rész és raktár, további tárolóhelyek. Példák: **bf polc 01**, **jf polc 02**, **h rakt 01**, **motul**, **visszáru**, valamint **01–16**. A kezdő nullák megmaradnak. A listából választva azonnal lehet csippantani. A névlista üres készlet mellett is rendelkezésre áll; a polcok előzetes felvétele nem hoz létre termékeket vagy mennyiségeket. Egyéni polchely továbbra is megadható. A program szándékosan nem választja ki automatikusan az előző helyet. Az aktív polchely neve a beolvasómező felett látható; minden további csippantás ehhez ad 1 darabot. Az előre felvett polcok, a korábban használt egyéni polcok és az aktív új hely a választóból, illetve a névmezőben felajánlott listából is elérhetők. A polchelyszűrőben üres, előre felvett hely is kiválasztható. Új polc nevét egyszerűen írd be. A kis- és nagybetű eltérése nem hoz létre új polcot, a szélső és ismételt szóközöket egységesítjük.
 
@@ -20,7 +22,7 @@ A polchely a sorban utólag javítható. Ha ugyanaz a vonalkód már szerepel a 
 
 Az új CSV a polchelyet is tartalmazza. A JSON-mentés formátuma v2-es: a vonalkód és polchely együtt azonosítja a sort. Visszatöltéskor csak az azonos vonalkódú **és** polchelyű sor értékei cserélődnek, a többi sor megmarad. Ugyanazon mentés ismételt visszatöltése nem duplázza a mennyiségeket. A v2-es mentéshez ezt az új programverziót használd; a régi program nem kezeli a több polchelyes adatokat.
 
-Böngészős regressziós teszt: `node tests/test_shelves.js`. Ellenőrzi a régi adatok megőrzését, a kötelező polcválasztást, az azonos kód több polcon való számolását, a szűrést, a polcok közötti áthelyezést/összevonást és a régi/új mentések visszatöltését.
+Böngészős regressziós teszt: `node tests/test_shelves.js`. Ellenőrzi a látható alaprajzot, a polcgombok teljességét, az átfedésmentes polcpozíciókat, a rajzról választás utáni számlálást és a billentyűzetes használatot, továbbá a régi adatok megőrzését, a kötelező polcválasztást, az azonos kód több polcon való számolását, a szűrést, a polcok közötti áthelyezést/összevonást és a régi/új mentések visszatöltését.
 
 ## Automatikus terméknév az EAN Search API-val
 
